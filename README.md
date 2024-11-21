@@ -1,19 +1,23 @@
-# CrewAI Project Advisor
+# CrewAI Advisor
 
-A Streamlit web application that helps design CrewAI-based solutions by providing expert recommendations on agents, tasks, and tools needed for your project.
+A Streamlit application that helps design CrewAI-based solutions by providing expert recommendations on agents, tasks, and tools needed for your project.
 
 ## Features
 
-- Interactive web interface for inputting project goals
-- GPT-4 powered CrewAI consulting
-- Structured output format for easy implementation
-- Helpful tips and CrewAI information
+- Get AI-powered recommendations for CrewAI project design
+- Support for both OpenAI and Azure OpenAI APIs
+- Pre-built templates for common use cases
+- Export recommendations as JSON
+- View history of previous recommendations
+- Save settings between sessions
+- Input validation and error handling
+- Detailed tips and guidance
 
 ## Setup
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/your-username/crewai-advisor.git
+git clone https://github.com/mmelton12/crewai-advisor.git
 cd crewai-advisor
 ```
 
@@ -22,66 +26,52 @@ cd crewai-advisor
 pip install -r requirements.txt
 ```
 
-3. Create a `.env` file in the project root and add your OpenAI API key:
-```bash
-OPENAI_API_KEY=your_api_key_here
-```
+3. Configure your API settings:
+   - Launch the application
+   - Open the Settings panel
+   - Choose your API type (OpenAI or Azure OpenAI)
+   - Enter your API key
+   - For Azure OpenAI, also enter your endpoint URL
+   - Select your preferred model
+   - Click "Save as Default" to persist settings
 
 4. Run the application:
 ```bash
 streamlit run app.py
 ```
 
-## Usage
+## API Support
 
-1. Enter your project goal in the text area
-2. Click "Get CrewAI Advice"
-3. Receive structured recommendations for:
-   - Agents with roles and backgrounds
-   - Tasks with descriptions
-   - Required tools and APIs
-   - Step-by-step workflow
+### OpenAI API
+- Supports standard OpenAI API keys
+- Available models:
+  - gpt-3.5-turbo
+  - gpt-4
+  - gpt-4-turbo-preview
+  - gpt-4-0125-preview
 
-## Output Format
+### Azure OpenAI API
+- Supports Azure OpenAI deployments
+- Available models:
+  - gpt-35-turbo
+  - gpt-4
+  - gpt-4-turbo
+  - gpt-4-32k
 
-The application provides recommendations in a structured Python dictionary format:
+## Templates
 
-```python
-{
-    "agents": [
-        {
-            "name": "agent_name",
-            "role": "role_description",
-            "background": "agent_background",
-            "goals": ["goal1", "goal2"]
-        }
-    ],
-    "tasks": [
-        {
-            "name": "task_name",
-            "description": "task_description",
-            "agent": "assigned_agent_name",
-            "tools": ["tool1", "tool2"]
-        }
-    ],
-    "tools": [
-        {
-            "name": "tool_name",
-            "purpose": "tool_purpose",
-            "api_requirements": ["req1", "req2"]
-        }
-    ],
-    "workflow": [
-        "step1",
-        "step2"
-    ]
-}
-```
+- Web Scraping: Design systems for scraping and processing web data
+- Content Creation: Create content generation and management systems
+- Market Analysis: Build market research and analysis systems
+- Custom: Define your own unique use case
 
-## Security Note
+## About CrewAI
 
-Never commit your `.env` file or expose your API keys. The `.gitignore` file is set up to prevent this.
+CrewAI is a framework for orchestrating role-playing AI agents. It enables:
+- Multi-agent collaboration
+- Task delegation
+- Complex workflow automation
 
-## License
+## Contributing
 
-MIT License
+Feel free to submit issues and enhancement requests!

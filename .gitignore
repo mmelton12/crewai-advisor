@@ -1,6 +1,3 @@
-# Environment variables
-.env
-
 # Python
 __pycache__/
 *.py[cod]
@@ -23,9 +20,13 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environment
+# Environment
+.env
+.venv
+env/
 venv/
 ENV/
+.streamlit/secrets.toml
 
 # IDE
 .idea/
