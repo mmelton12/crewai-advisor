@@ -5,7 +5,7 @@ A Streamlit application that helps design CrewAI-based solutions by providing ex
 ## Features
 
 - Get AI-powered recommendations for CrewAI project design
-- Support for both OpenAI and Azure OpenAI APIs
+- Support for both OpenAI and Anthropic APIs
 - Pre-built templates for common use cases
 - Export recommendations as JSON
 - View history of previous recommendations
@@ -29,9 +29,8 @@ pip install -r requirements.txt
 3. Configure your API settings:
    - Launch the application
    - Open the Settings panel
-   - Choose your API type (OpenAI or Azure OpenAI)
+   - Choose your API type (OpenAI or Anthropic)
    - Enter your API key
-   - For Azure OpenAI, also enter your endpoint URL
    - Select your preferred model
    - Click "Save as Default" to persist settings
 
@@ -47,16 +46,17 @@ streamlit run app.py
 - Available models:
   - gpt-3.5-turbo
   - gpt-4
-  - gpt-4-turbo-preview
-  - gpt-4-0125-preview
-
-### Azure OpenAI API
-- Supports Azure OpenAI deployments
-- Available models:
-  - gpt-35-turbo
-  - gpt-4
-  - gpt-4-turbo
   - gpt-4-32k
+
+### Anthropic API
+- Supports Anthropic API keys
+- Available models:
+  - claude-3-opus-20240229
+  - claude-3-sonnet-20240229
+  - claude-3-haiku-20240307
+  - claude-2.1
+  - claude-2.0
+  - claude-instant-1.2
 
 ## Templates
 
