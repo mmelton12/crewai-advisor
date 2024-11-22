@@ -1,11 +1,12 @@
 import streamlit as st
 import openai
+import anthropic  # Added import for Anthropic
 import json
 from datetime import datetime
 import re
 import toml
 import os
-from openai import AzureOpenAI, OpenAI
+from openai import OpenAI  # Removed AzureOpenAI import
 
 # Configure page settings
 st.set_page_config(
@@ -29,14 +30,15 @@ AVAILABLE_MODELS = {
     'openai': [
         'gpt-3.5-turbo',
         'gpt-4',
-        'gpt-4-turbo-preview',
-        'gpt-4-0125-preview'
-    ],
-    'azure': [
-        'gpt-35-turbo',
-        'gpt-4',
-        'gpt-4-turbo',
         'gpt-4-32k'
+    ],
+    'anthropic': [
+        'claude-3-opus-20240229',
+        'claude-3-sonnet-20240229',
+        'claude-3-haiku-20240307',
+        'claude-2.1',
+        'claude-2.0',
+        'claude-instant-1.2'
     ]
 }
 
@@ -49,13 +51,9 @@ TEMPLATES = {
 }
 
 def get_client(api_key, api_type='openai'):
-    """Get appropriate OpenAI client based on API type"""
-    if api_type == 'azure':
-        return AzureOpenAI(
-            api_key=api_key,
-            api_version="2024-02-15-preview",
-            azure_endpoint=os.getenv('AZURE_OPENAI_ENDPOINT', "https://api.azure.openai.com")
-        )
+    """Get appropriate client based on API type"""
+    if api_type == 'anthropic':
+        return anthropic.Anthropic(api_key=api_key)
     else:
         return OpenAI(api_key=api_key)
 
@@ -66,75 +64,85 @@ def validate_input(goal):
     return True, ""
 
 def get_crewai_advice(goal, api_key, model, api_type='openai'):
-    """Get CrewAI advice from OpenAI"""
+    """Get CrewAI advice from OpenAI or Anthropic"""
     try:
         client = get_client(api_key, api_type)
         
-        # Adjust model name for Azure
-        if api_type == 'azure':
-            model = model.replace('.', '')  # Remove periods for Azure model names
+        system_prompt = """You are a master CrewAI consultant. Your expertise lies in designing agent-based systems 
+        using the CrewAI framework. When given a goal, you should:
+        1. Analyze the requirements
+        2. Define the necessary agents with their roles and backgrounds
+        3. Specify the tasks each agent should perform
+        4. Identify required tools and APIs
+        5. Suggest the optimal workflow and execution order
         
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
+        Return ONLY the JSON response without any additional text or markdown formatting:
+        
+        {
+            "agents": [
                 {
-                    "role": "system",
-                    "content": """You are a master CrewAI consultant. Your expertise lies in designing agent-based systems 
-                    using the CrewAI framework. When given a goal, you should:
-                    1. Analyze the requirements
-                    2. Define the necessary agents with their roles and backgrounds
-                    3. Specify the tasks each agent should perform
-                    4. Identify required tools and APIs
-                    5. Suggest the optimal workflow and execution order
-                    
-                    Return ONLY the JSON response without any additional text or markdown formatting:
-                    
-                    {
-                        "agents": [
-                            {
-                                "name": "agent_name",
-                                "role": "role_description",
-                                "background": "agent_background",
-                                "goals": ["goal1", "goal2"]
-                            }
-                        ],
-                        "tasks": [
-                            {
-                                "name": "task_name",
-                                "description": "task_description",
-                                "agent": "assigned_agent_name",
-                                "tools": ["tool1", "tool2"]
-                            }
-                        ],
-                        "tools": [
-                            {
-                                "name": "tool_name",
-                                "purpose": "tool_purpose",
-                                "api_requirements": ["req1", "req2"]
-                            }
-                        ],
-                        "workflow": [
-                            "step1",
-                            "step2"
-                        ]
-                    }"""
-                },
-                {
-                    "role": "user",
-                    "content": goal
+                    "name": "agent_name",
+                    "role": "role_description",
+                    "background": "agent_background",
+                    "goals": ["goal1", "goal2"]
                 }
             ],
-            temperature=0.7,
-            max_tokens=2000
-        )
-        return True, response.choices[0].message.content
+            "tasks": [
+                {
+                    "name": "task_name",
+                    "description": "task_description",
+                    "agent": "assigned_agent_name",
+                    "tools": ["tool1", "tool2"]
+                }
+            ],
+            "tools": [
+                {
+                    "name": "tool_name",
+                    "purpose": "tool_purpose",
+                    "api_requirements": ["req1", "req2"]
+                }
+            ],
+            "workflow": [
+                "step1",
+                "step2"
+            ]
+        }"""
+        
+        if api_type == 'anthropic':
+            response = client.messages.create(
+                model=model,
+                max_tokens=2000,
+                temperature=0.7,
+                system=system_prompt,
+                messages=[
+                    {"role": "user", "content": goal}
+                ]
+            )
+            return True, response.content[0].text
+        else:
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": system_prompt
+                    },
+                    {
+                        "role": "user",
+                        "content": goal
+                    }
+                ],
+                temperature=0.7,
+                max_tokens=2000
+            )
+            return True, response.choices[0].message.content
     except Exception as e:
         return False, f"""
         Error: {str(e)}
         
         Please ensure:
         1. Your API key is valid
-        2. You have selected the correct API type (OpenAI or Azure)
+        2. You have selected the correct API type (OpenAI or Anthropic)
         3. You have access to the selected model ({model})
         4. Your API key has sufficient credits
         
@@ -233,11 +241,11 @@ with st.expander("⚙️ Settings", expanded=not bool(st.session_state.api_key))
         # API Type selection
         api_type = st.radio(
             "API Type",
-            options=['OpenAI', 'Azure OpenAI'],
+            options=['OpenAI', 'Anthropic'],
             index=0 if st.session_state.api_type == 'openai' else 1,
-            help="Choose between standard OpenAI API or Azure OpenAI API"
+            help="Choose between standard OpenAI API or Anthropic API"
         )
-        st.session_state.api_type = 'openai' if api_type == 'OpenAI' else 'azure'
+        st.session_state.api_type = 'openai' if api_type == 'OpenAI' else 'anthropic'
         
         # API Key input
         api_key = st.text_input(
@@ -246,13 +254,6 @@ with st.expander("⚙️ Settings", expanded=not bool(st.session_state.api_key))
             type="password",
             help="Enter your API key"
         )
-        
-        if st.session_state.api_type == 'azure':
-            azure_endpoint = st.text_input(
-                "Azure OpenAI Endpoint",
-                value=os.getenv('AZURE_OPENAI_ENDPOINT', "https://api.azure.openai.com"),
-                help="Enter your Azure OpenAI endpoint URL"
-            )
         
         # Model selection
         model = st.selectbox(
@@ -268,8 +269,6 @@ with st.expander("⚙️ Settings", expanded=not bool(st.session_state.api_key))
         if st.button("Save for Session"):
             st.session_state.api_key = api_key
             st.session_state.selected_model = model
-            if st.session_state.api_type == 'azure':
-                os.environ['AZURE_OPENAI_ENDPOINT'] = azure_endpoint
             st.success("Settings saved for this session!")
         
         # Save as default button
@@ -280,8 +279,6 @@ with st.expander("⚙️ Settings", expanded=not bool(st.session_state.api_key))
                     'selected_model': model,
                     'api_type': st.session_state.api_type
                 }
-                if st.session_state.api_type == 'azure':
-                    secrets['azure_openai_endpoint'] = azure_endpoint
                 
                 secrets_path = os.path.join('.streamlit', 'secrets.toml')
                 os.makedirs(os.path.dirname(secrets_path), exist_ok=True)
@@ -290,8 +287,6 @@ with st.expander("⚙️ Settings", expanded=not bool(st.session_state.api_key))
                 
                 st.session_state.api_key = api_key
                 st.session_state.selected_model = model
-                if st.session_state.api_type == 'azure':
-                    os.environ['AZURE_OPENAI_ENDPOINT'] = azure_endpoint
                 st.success("Settings saved as default!")
             except Exception as e:
                 st.error(f"Error saving settings: {str(e)}")
